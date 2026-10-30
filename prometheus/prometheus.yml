@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager-Konfiguration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Alert-Rules laden
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape-Konfiguration
+scrape_configs:
+  # Prometheus selbst
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # MedFlow Cold-Chain Exporter
+  # Hinweis: Kein Ziel-Label "service" setzen! Der Exporter liefert selbst ein
+  # Label "service" (order-service, cold-chain-service, ...). Ein gleichnamiges
+  # Ziel-Label würde es überschreiben (Original landet in "exported_service").
+  - job_name: 'medflow-coldchain'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['medflow-exporter:8000']
+        labels:
+          environment: 'production'
+          team: 'platform-engineering'

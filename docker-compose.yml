@@ -1,0 +1,96 @@
+services:
+  # ============================================================
+  # MedFlow Fake Exporter – simuliert Cold-Chain-Metriken
+  # Port 8000: Metriken für Prometheus
+  # Port 8001: Steuerseite für Störungen (Chaos-Schalter)
+  # ============================================================
+  medflow-exporter:
+    build: ./exporter
+    container_name: medflow-exporter
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      - VEHICLE_COUNT=45
+      - ANOMALY_ENABLED=true
+      - ANOMALY_START_SECONDS=300
+      - ANOMALY_RISE_PER_MINUTE=0.6
+      - ANOMALY_MAX_RISE=8.0
+      - ANOMALY_VEHICLE=
+      - ERROR_RATE=0.02
+    networks:
+      - monitoring
+
+  # ============================================================
+  # Prometheus – Metrics Collection & Storage
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    networks:
+      - monitoring
+
+  # ============================================================
+  # Alertmanager – Alert Routing & Notification
+  # ============================================================
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+
+  # ============================================================
+  # Webhook-Empfänger – zeigt, welcher Receiver welchen Alert erhält
+  # (ersetzt PagerDuty, Slack und E-Mail in der Simulation)
+  # ============================================================
+  webhook-sink:
+    build: ./webhook-sink
+    container_name: webhook-sink
+    ports:
+      - "9999:9999"
+    environment:
+      - TZ=Europe/Zurich
+    networks:
+      - monitoring
+
+  # ============================================================
+  # Grafana – Visualization & Dashboards
+  # ============================================================
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=medflow2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  monitoring:
+    driver: bridge

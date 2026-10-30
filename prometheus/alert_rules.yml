@@ -1,0 +1,35 @@
+groups:
+  - name: medflow_coldchain_alerts
+    rules:
+      # ============================================================
+      # BEISPIEL-ALERT (vorgegeben)
+      # ============================================================
+      - alert: ColdChainServiceDown
+        expr: up{job="medflow-coldchain"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform-engineering
+          service: cold-chain-monitoring
+        annotations:
+          summary: "Cold-Chain Exporter ist nicht erreichbar"
+          description: "Der MedFlow Cold-Chain Exporter ({{ $labels.instance }}) antwortet seit mehr als 1 Minute nicht mehr."
+          runbook_url: "https://wiki.medflow.ch/runbooks/coldchain-exporter-down"
+
+      # ============================================================
+      # AUFGABE 3a: Temperatur-Alerts hier ergänzen
+      # ============================================================
+      # TODO: Warning wenn Temperatur > 8°C oder < 2°C für > 2 Minuten
+      # TODO: Critical wenn Temperatur > 10°C oder < 0°C für > 1 Minute
+
+
+      # ============================================================
+      # AUFGABE 3b: Error-Rate-Alert hier ergänzen
+      # ============================================================
+      # TODO: Alert wenn Error Rate eines Services > 5% über 5 Minuten
+
+
+      # ============================================================
+      # AUFGABE 3c: Latenz-Alert hier ergänzen
+      # ============================================================
+      # TODO: Alert wenn p95-Latenz eines Services > 2 Sekunden über 5 Minuten
